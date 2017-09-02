@@ -10,15 +10,21 @@ class Tabltalk(BasicNewsRecipe):
 
     appURL = 'https://tabletalkmagazine.com/'
     title = 'Tabletalk'
-    __author__ = 'Ligonier'
-    description = 'Tabletalk is a monthly magazine dedicated to helping you grow in Christ.'
+    __author__ = 'pieplu'
+    description = 'Download the Tabletalk magazine of the current month'
     needs_subscription = False
     no_stylesheets = True
-    remove_tags = [dict(attrs={'class':['social-share', 'share-buttons']}),
+    timefmt = ' - %B %Y'
+    remove_tags = [dict(attrs={'class':['social-share', 'share-buttons', "social-share naked-social-share","share-buttons share-buttons--footer","naked-social-share", "social-share__icons", 'article__number']}),
                 dict(id=['footer']),
-                dict(name=['script', 'noscript', 'header'])]
+                dict(name=['script', 'noscript', 'header', 'style'])]
     remove_tags_after = [dict(attrs={'class':['post-content-wrapper']})]
-    extra_css = 'svg {width:40px;height:40px;fill:#D3D0CC}'
+    extra_css = ('.tt-quote{font-weight:bolder;font-size:1.2em;text-align:center;}'
+                '.article__footer{text-align:center;font-size:.9em;}.article__footer:before{content:"";width:4em;height:.2em;display:block;background:#D3D0CC}'
+                '.article__number{color:#D3D0CC;font-family:sans-serif;}.article__number hr{display:none;}.article__number p{display:inline-block;}'
+                '.header-base__column{display:inline-block;font-family:sans-serif;}.header-base__column--first{padding-right:1em;}'
+                'h5{text-transform:uppercase;font-size:1em;color:#444444}')
+                
     
     def getIssueJson(self, issueId):
         br = BasicNewsRecipe.get_browser(self)
@@ -64,9 +70,9 @@ class Tabltalk(BasicNewsRecipe):
                 dict(title=title, url=url, date=pubdate, description=description, content='', author=author))
         
         for columnsArticle in data.get("columns"):
-            url = featuredArticle["post_link"]
-            title = featuredArticle["post_title"]
-            author = featuredArticle["post_author"]
+            url = columnsArticle["post_link"]
+            title = columnsArticle["post_title"]
+            author = columnsArticle["post_author"]
             description = ''
             pubdate = data.get("issue_date")
             columns.append(
@@ -74,5 +80,16 @@ class Tabltalk(BasicNewsRecipe):
 
         ans = [('Features', features), ('Columns', columns)]
 
-        print "========================"
         return ans
+
+    def postprocess_html(self, soupe, first_fetch):
+        for cit in soupe.findAll("div", attrs={"class": re.compile("pull-quote__quote")}):
+            cit.name = "blockquote"
+            cit['class'] = "tt-quote"
+
+        t = soupe.find("svg")
+        t['width'] = '2em'
+        t['height'] = '2em'
+        t['fill'] = 'currentColor'
+        t['style'] = 'vertical-align: middle;'
+        return soupe
