@@ -5,6 +5,8 @@ from calibre.web.feeds.recipes import BasicNewsRecipe
 from mechanize import Request
 import json
 
+tt_year = "2017"
+tt_month = "03"
 
 class Tabltalk(BasicNewsRecipe):
 
@@ -25,7 +27,6 @@ class Tabltalk(BasicNewsRecipe):
                 '.header-base__column{display:inline-block;font-family:sans-serif;}.header-base__column--first{padding-right:1em;}'
                 'h5{text-transform:uppercase;font-size:1em;color:#444444}')
                 
-    
     def getIssueJson(self, issueId):
         br = BasicNewsRecipe.get_browser(self)
         post_url = self.appURL + "/wp-admin/admin-ajax.php"
@@ -46,22 +47,48 @@ class Tabltalk(BasicNewsRecipe):
         return json.loads(r.read())
 
 
+    def getIssuesOfYearJson(self, year):
+        br = BasicNewsRecipe.get_browser(self)
+        post_url = self.appURL + "/wp-admin/admin-ajax.php"
+        payload = ("------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"year\"\r\n\r\n" + year + "\r\n"
+                    "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"action\"\r\n\r\nissues_by_year\r\n"
+                    "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"dataType\"\r\n\r\njson\r\n"
+                    "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"post_type\"\r\n\r\nissue\r\n"
+                    "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"ppp\"\r\n\r\n-1\r\n"
+                    "------WebKitFormBoundary7MA4YWxkTrZu0gW--")
+        headers = {
+            'content-type': "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW",
+            'cache-control': "no-cache",
+            'X-HTTP-Method-Override': 'POST',
+            'X-Requested-With': 'XMLHttpRequest'
+            }
+
+        rq = Request(post_url, headers=headers, data=payload)
+        r = br.open(rq)
+        if r.code != 200:
+            raise ValueError('Failed POST request')
+        return json.loads(r.read())
+
+
     def parse_index(self):
         baseURL = self.appURL
-        soup = self.index_to_soup(baseURL + "magazine/")
         features = []
         columns = []
         issueName = ""
         ans = []
         issueId = 0
 
-        issueId = soup.find('div', attrs={"data-issue-id": True})["data-issue-id"]
-        data = self.getIssueJson(issueId)
-
-        issueName = data.get("issue_title")
+        issuesOfYear = self.getIssuesOfYearJson(tt_year)
+        issueIndex = issuesOfYear.get("post_count") - int(tt_month)
+        issueData = issuesOfYear.get("issues")[issueIndex]
+        issueId = str(issueData.get("id"))
+        issueName = issueData.get("title")
         self.title = issueName + ' - Tabletalk'
-        self.cover_url = data.get("issue_image")
-        self.description = data.get("issue_date") + " - " + data.get("issue_link")
+        self.cover_url = issueData.get("image")
+        self.description = issueData.get("date_desktop") + " - " + issueData.get("permalink")
+        self.timefmt = ' - ' + issueData.get("date_desktop")
+        
+        data = self.getIssueJson(issueId)
         
         for featuredArticle in data.get("featured_articles"):
             url = featuredArticle["post_link"]
