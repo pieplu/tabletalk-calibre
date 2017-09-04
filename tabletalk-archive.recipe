@@ -11,9 +11,9 @@ tt_month = "03"
 class Tabltalk(BasicNewsRecipe):
 
     appURL = 'https://tabletalkmagazine.com/'
-    title = 'Tabletalk'
+    title = 'Tabletalk archive'
     __author__ = 'pieplu'
-    description = 'Download the Tabletalk magazine of the current month'
+    description = 'Download a past issue of Tabletalk magazine'
     needs_subscription = False
     no_stylesheets = True
     timefmt = ' - %B %Y'
@@ -122,4 +122,7 @@ class Tabltalk(BasicNewsRecipe):
         t['height'] = '2em'
         t['fill'] = 'currentColor'
         t['style'] = 'vertical-align: middle;'
+        t['xmlns'] = t['xmlns:xmlns'] 
+        del t['xmlns:xmlns'] #important to avoid xml error on ibooks or Kobo readers
+
         return soupe

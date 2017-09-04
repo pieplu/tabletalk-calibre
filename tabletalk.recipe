@@ -95,4 +95,7 @@ class Tabltalk(BasicNewsRecipe):
         t['height'] = '2em'
         t['fill'] = 'currentColor'
         t['style'] = 'vertical-align: middle;'
+        t['xmlns'] = t['xmlns:xmlns'] 
+        del t['xmlns:xmlns'] #important to avoid xml error on ibooks or Kobo readers
+
         return soupe
