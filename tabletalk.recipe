@@ -21,7 +21,7 @@ class Tabltalk(BasicNewsRecipe):
     remove_tags_after = [dict(attrs={'class':['post-content-wrapper']})]
     extra_css = ('.tt-quote{font-weight:bolder;font-size:1.2em;text-align:center;}'
                 '.article__footer{text-align:center;font-size:.9em;}.article__footer:before{content:"";width:4em;height:.2em;display:block;background:#D3D0CC}'
-                '.article__number{color:#D3D0CC;font-family:sans-serif;}.article__number hr{display:none;}.article__number p{display:inline-block;}'
+                '.article__number{color:#D3D0CC;font-family:sans-serif;}.article__number p{display:inline-block;}'
                 '.header-base__column{display:inline-block;font-family:sans-serif;}.header-base__column--first{padding-right:1em;}'
                 'h5{text-transform:uppercase;font-size:1em;color:#444444}')
                 
@@ -89,12 +89,14 @@ class Tabltalk(BasicNewsRecipe):
         for cit in soupe.findAll("div", attrs={"class": re.compile("pull-quote__quote")}):
             cit.name = "blockquote"
             cit['class'] = "tt-quote"
+        
+        soupe.find("div", attrs={"class": re.compile("article__number")}).find("hr").extract()
 
         t = soupe.find("svg")
         t['width'] = '2em'
         t['height'] = '2em'
         t['fill'] = 'currentColor'
-        t['style'] = 'vertical-align: middle;'
+        t['style'] = 'vertical-align: middle;display:inline-block;'
         t['xmlns'] = t['xmlns:xmlns'] 
         del t['xmlns:xmlns'] #important to avoid xml error on ibooks or Kobo readers
 
