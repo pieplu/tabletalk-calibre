@@ -10,10 +10,14 @@ class Tabltalk(BasicNewsRecipe):
 
     appURL = 'https://tabletalkmagazine.com/'
     title = 'Tabletalk'
+    publisher = 'Ligonier Ministries'
     __author__ = 'pieplu'
     description = 'Download the Tabletalk magazine of the current month'
     needs_subscription = False
     no_stylesheets = True
+
+    conversion_options = {'publisher': publisher}
+
     timefmt = ' - %B %Y'
     remove_tags = [dict(attrs={'class':['social-share', 'share-buttons', "social-share naked-social-share","share-buttons share-buttons--footer","naked-social-share", "social-share__icons", 'article__number']}),
                 dict(id=['footer']),
@@ -23,7 +27,8 @@ class Tabltalk(BasicNewsRecipe):
                 '.article__footer{text-align:center;font-size:.9em;}.article__footer:before{content:"";width:4em;height:.2em;display:block;background:#D3D0CC}'
                 '.article__number{color:#D3D0CC;font-family:sans-serif;}.article__number p{display:inline-block;}'
                 '.header-base__column{display:inline-block;font-family:sans-serif;}.header-base__column--first{padding-right:1em;}'
-                'h5{text-transform:uppercase;font-size:1em;color:#444444}')
+                'h5{text-transform:uppercase;font-size:1em;color:#444444}'
+                'img{max-width:100%}')
                 
     
     def getIssueJson(self, issueId):
