@@ -10,10 +10,14 @@ class Tabltalk(BasicNewsRecipe):
 
     appURL = 'https://tabletalkmagazine.com/'
     title = 'Tabletalk'
+    publisher = 'Ligonier Ministries'
     __author__ = 'pieplu'
     description = 'Download the Tabletalk magazine of the current month'
     needs_subscription = False
     no_stylesheets = True
+
+    conversion_options = {'publisher': publisher}
+
     timefmt = ' - %B %Y'
     remove_tags = [dict(attrs={'class':['social-share', 'share-buttons', "social-share naked-social-share","share-buttons share-buttons--footer","naked-social-share", "social-share__icons", 'article__number']}),
                 dict(id=['footer']),
@@ -21,11 +25,12 @@ class Tabltalk(BasicNewsRecipe):
     remove_tags_after = [dict(attrs={'class':['post-content-wrapper']})]
     extra_css = ('.tt-quote{font-weight:bolder;font-size:1.2em;text-align:center;}'
                 '.article__footer{text-align:center;font-size:.9em;}.article__footer:before{content:"";width:4em;height:.2em;display:block;background:#D3D0CC}'
-                '.article__number{color:#D3D0CC;font-family:sans-serif;}.article__number hr{display:none;}.article__number p{display:inline-block;}'
+                '.article__number{color:#D3D0CC;font-family:sans-serif;}.article__number p{display:inline-block;}'
                 '.header-base__column{display:inline-block;font-family:sans-serif;}.header-base__column--first{padding-right:1em;}'
-                'h5{text-transform:uppercase;font-size:1em;color:#444444}')
-                
-    
+                'h5{text-transform:uppercase;font-size:1em;color:#444444}'
+                'img{max-width:100%}')
+
+
     def getIssueJson(self, issueId):
         br = BasicNewsRecipe.get_browser(self)
         post_url = self.appURL + "/wp-admin/admin-ajax.php"
@@ -62,7 +67,7 @@ class Tabltalk(BasicNewsRecipe):
         self.title = issueName + ' - Tabletalk'
         self.cover_url = data.get("issue_image")
         self.description = data.get("issue_date") + " - " + data.get("issue_link")
-        
+
         for featuredArticle in data.get("featured_articles"):
             url = featuredArticle["post_link"]
             title = featuredArticle["post_title"]
@@ -71,7 +76,7 @@ class Tabltalk(BasicNewsRecipe):
             pubdate = data.get("issue_date")
             features.append(
                 dict(title=title, url=url, date=pubdate, description=description, content='', author=author))
-        
+
         for columnsArticle in data.get("columns"):
             url = columnsArticle["post_link"]
             title = columnsArticle["post_title"]
@@ -90,12 +95,14 @@ class Tabltalk(BasicNewsRecipe):
             cit.name = "blockquote"
             cit['class'] = "tt-quote"
 
+        soupe.find("div", attrs={"class": re.compile("article__number")}).find("hr").extract()
+
         t = soupe.find("svg")
         t['width'] = '2em'
         t['height'] = '2em'
         t['fill'] = 'currentColor'
-        t['style'] = 'vertical-align: middle;'
-        t['xmlns'] = t['xmlns:xmlns'] 
+        t['style'] = 'vertical-align: middle;display:inline-block;'
+        t['xmlns'] = t['xmlns:xmlns']
         del t['xmlns:xmlns'] #important to avoid xml error on ibooks or Kobo readers
 
         return soupe
