@@ -29,8 +29,8 @@ class Tabltalk(BasicNewsRecipe):
                 '.header-base__column{display:inline-block;font-family:sans-serif;}.header-base__column--first{padding-right:1em;}'
                 'h5{text-transform:uppercase;font-size:1em;color:#444444}'
                 'img{max-width:100%}')
-                
-    
+
+
     def getIssueJson(self, issueId):
         br = BasicNewsRecipe.get_browser(self)
         post_url = self.appURL + "/wp-admin/admin-ajax.php"
@@ -95,8 +95,6 @@ class Tabltalk(BasicNewsRecipe):
             cit.name = "blockquote"
             cit['class'] = "tt-quote"
         
-        soupe.find("div", attrs={"class": re.compile("article__number")}).find("hr").extract()
-
         soupe.find("div", attrs={"class": re.compile("article__number")}).find("hr").extract()
 
         t = soupe.find("svg")
