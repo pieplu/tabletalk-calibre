@@ -34,12 +34,12 @@ class Tabltalk(BasicNewsRecipe):
     def getIssueJson(self, issueId):
         br = BasicNewsRecipe.get_browser(self)
         post_url = self.appURL + "/wp-admin/admin-ajax.php"
-        payload = ("------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"id\"\r\n\r\n"+ issueId +"\r\n"
-                    "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"action\"\r\n\r\nissue_toc\r\n"
-                    "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name=\"dataType\"\r\n\r\njson\r\n"
-                    "------WebKitFormBoundary7MA4YWxkTrZu0gW--")
+        payload = {
+            'id' : issueId + "",
+            'action':'issue_toc',
+            'dataType':'json'
+        }
         headers = {
-            'content-type': "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW",
             'cache-control': "no-cache",
             'X-HTTP-Method-Override': 'POST',
             'X-Requested-With': 'XMLHttpRequest'
@@ -56,6 +56,7 @@ class Tabltalk(BasicNewsRecipe):
         soup = self.index_to_soup(baseURL + "magazine/")
         features = []
         columns = []
+        dailystudies = []
         issueName = ""
         ans = []
         issueId = 0
@@ -85,8 +86,18 @@ class Tabltalk(BasicNewsRecipe):
             pubdate = data.get("issue_date")
             columns.append(
                 dict(title=title, url=url, date=pubdate, description=description, content='', author=author))
+        
+        for dailyArticle in data.get("daily_studies"):
+            url = dailyArticle["post_link"]
+            title = dailyArticle["post_day"] + " " + data.get("issue_date")
+            author = ""
+            description = ""
+            pubdate = dailyArticle["post_day"] + " " + data.get("issue_date")
+            dailystudies.append(
+                dict(title=title, url=url, date=pubdate, description=description, content='', author=author))
 
-        ans = [('Features', features), ('Columns', columns)]
+
+        ans = [('Features', features), ('Columns', columns), ('Daily Studies', dailystudies)]
 
         return ans
 
@@ -98,11 +109,12 @@ class Tabltalk(BasicNewsRecipe):
         soupe.find("div", attrs={"class": re.compile("article__number")}).find("hr").extract()
 
         t = soupe.find("svg")
-        t['width'] = '2em'
-        t['height'] = '2em'
-        t['fill'] = 'currentColor'
-        t['style'] = 'vertical-align: middle;display:inline-block;'
-        t['xmlns'] = t['xmlns:xmlns']
-        del t['xmlns:xmlns'] #important to avoid xml error on ibooks or Kobo readers
+        if t is not None:
+            t['width'] = '2em'
+            t['height'] = '2em'
+            t['fill'] = 'currentColor'
+            t['style'] = 'vertical-align: middle;display:inline-block;'
+            t['xmlns'] = t['xmlns:xmlns']
+            del t['xmlns:xmlns'] #important to avoid xml error on ibooks or Kobo readers
 
         return soupe
