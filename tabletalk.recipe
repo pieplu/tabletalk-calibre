@@ -68,6 +68,19 @@ class Tabltalk(BasicNewsRecipe):
         self.title = issueName + ' - Tabletalk'
         self.cover_url = data.get("issue_image")
         self.description = data.get("issue_date") + " - " + data.get("issue_link")
+        
+        for articlesSansDailies in data.get("articles_sans_dailies"):
+            url = articlesSansDailies["url"]
+            title = articlesSansDailies["title"]
+            author = articlesSansDailies["after"]
+            description = articlesSansDailies["before"] or ''
+            pubdate = data.get("issue_date")
+            if articlesSansDailies["content_type"] == 'feature':
+                features.append(
+                    dict(title=title, url=url, date=pubdate, description=description, content='', author=author))
+            elif articlesSansDailies["content_type"] == 'column:':
+                columns.append(
+                    dict(title=title, url=url, date=pubdate, description=description, content='', author=author))
 
         for featuredArticle in data.get("featured_articles"):
             url = featuredArticle["post_link"]
@@ -106,7 +119,18 @@ class Tabltalk(BasicNewsRecipe):
             cit.name = "blockquote"
             cit['class'] = "tt-quote"
         
-        soupe.find("div", attrs={"class": re.compile("article__number")}).find("hr").extract()
+        artNb = soupe.find("div", attrs={"class": re.compile("article__number")})
+        if artNb is not None:
+            artNb.find("hr").extract()
+
+        toc = soupe.find("div", attrs={"class": re.compile("toc__toggle")})
+        if toc is not None:
+            toc.find("img").extract()
+            toc.find("button").extract()
+        
+        tocMobile = soupe.find("div", attrs={"class": re.compile("toc__toggle--mobile")})
+        if tocMobile is not None:
+            tocMobile.extract()
 
         t = soupe.find("svg")
         if t is not None:
@@ -118,3 +142,4 @@ class Tabltalk(BasicNewsRecipe):
             del t['xmlns:xmlns'] #important to avoid xml error on ibooks or Kobo readers
 
         return soupe
+    
