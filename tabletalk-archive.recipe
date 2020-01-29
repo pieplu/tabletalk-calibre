@@ -6,12 +6,13 @@ from mechanize import Request
 import json
 
 tt_year = "2017"
-tt_month = "03"
+tt_month = "07"
 
 class Tabltalk(BasicNewsRecipe):
 
     appURL = 'https://tabletalkmagazine.com/'
     title = 'Tabletalk archive'
+    publisher = 'Ligonier Ministries'
     __author__ = 'pieplu'
     description = 'Download a past issue of Tabletalk magazine'
     needs_subscription = False
@@ -26,6 +27,9 @@ class Tabltalk(BasicNewsRecipe):
                 '.article__number{color:#D3D0CC;font-family:sans-serif;}.article__number hr{display:none;}.article__number p{display:inline-block;}'
                 '.header-base__column{display:inline-block;font-family:sans-serif;}.header-base__column--first{padding-right:1em;}'
                 'h5{text-transform:uppercase;font-size:1em;color:#444444}')
+                
+    conversion_options = {'publisher': publisher}
+
                 
     def getIssueJson(self, issueId):
         br = BasicNewsRecipe.get_browser(self)
@@ -74,6 +78,7 @@ class Tabltalk(BasicNewsRecipe):
         baseURL = self.appURL
         features = []
         columns = []
+        dailystudies = [] 
         issueName = ""
         ans = []
         issueId = 0
@@ -89,6 +94,19 @@ class Tabltalk(BasicNewsRecipe):
         self.timefmt = ' - ' + issueData.get("date_desktop")
         
         data = self.getIssueJson(issueId)
+        
+        for articlesSansDailies in data.get("articles_sans_dailies"):
+            url = articlesSansDailies["url"]
+            title = articlesSansDailies["title"]
+            author = articlesSansDailies["after"]
+            description = articlesSansDailies["before"] or ''
+            pubdate = data.get("issue_date")
+            if articlesSansDailies["content_type"] == 'feature':
+                features.append(
+                    dict(title=title, url=url, date=pubdate, description=description, content='', author=author))
+            elif articlesSansDailies["content_type"] == 'column:':
+                columns.append(
+                    dict(title=title, url=url, date=pubdate, description=description, content='', author=author))
         
         for featuredArticle in data.get("featured_articles"):
             url = featuredArticle["post_link"]
@@ -107,8 +125,17 @@ class Tabltalk(BasicNewsRecipe):
             pubdate = data.get("issue_date")
             columns.append(
                 dict(title=title, url=url, date=pubdate, description=description, content='', author=author))
+        
+        for dailyArticle in data.get("daily_studies"):
+            url = dailyArticle["post_link"]
+            title = dailyArticle["post_day"] + " " + data.get("issue_date")
+            author = ""
+            description = ""
+            pubdate = dailyArticle["post_day"] + " " + data.get("issue_date")
+            dailystudies.append(
+                dict(title=title, url=url, date=pubdate, description=description, content='', author=author))
 
-        ans = [('Features', features), ('Columns', columns)]
+        ans = [('Features', features), ('Columns', columns), ('Daily Studies', dailystudies)]
 
         return ans
 
@@ -116,13 +143,27 @@ class Tabltalk(BasicNewsRecipe):
         for cit in soupe.findAll("div", attrs={"class": re.compile("pull-quote__quote")}):
             cit.name = "blockquote"
             cit['class'] = "tt-quote"
+        
+        artNb = soupe.find("div", attrs={"class": re.compile("article__number")})
+        if artNb is not None:
+            artNb.find("hr").extract()
+
+        toc = soupe.find("div", attrs={"class": re.compile("toc__toggle")})
+        if toc is not None:
+            toc.find("img").extract()
+            toc.find("button").extract()
+
+        tocMobile = soupe.find("div", attrs={"class": re.compile("toc__toggle--mobile")})
+        if tocMobile is not None:
+            tocMobile.extract()
 
         t = soupe.find("svg")
-        t['width'] = '2em'
-        t['height'] = '2em'
-        t['fill'] = 'currentColor'
-        t['style'] = 'vertical-align: middle;'
-        t['xmlns'] = t['xmlns:xmlns'] 
-        del t['xmlns:xmlns'] #important to avoid xml error on ibooks or Kobo readers
+        if t is not None:
+            t['width'] = '2em'
+            t['height'] = '2em'
+            t['fill'] = 'currentColor'
+            t['style'] = 'vertical-align: middle;'
+            t['xmlns'] = t['xmlns:xmlns'] 
+            del t['xmlns:xmlns'] #important to avoid xml error on ibooks or Kobo readers
 
         return soupe
