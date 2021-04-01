@@ -15,6 +15,7 @@ class Tabltalk(BasicNewsRecipe):
     description = 'Download the Tabletalk magazine of the current month'
     needs_subscription = False
     no_stylesheets = True
+    language = 'en'
 
     conversion_options = {'publisher': publisher}
 
@@ -53,7 +54,7 @@ class Tabltalk(BasicNewsRecipe):
 
     def parse_index(self):
         baseURL = self.appURL
-        soup = self.index_to_soup(baseURL + "magazine/")
+        soup = self.index_to_soup(baseURL)
         features = []
         columns = []
         dailystudies = []
@@ -61,7 +62,7 @@ class Tabltalk(BasicNewsRecipe):
         ans = []
         issueId = 0
 
-        issueId = soup.find('div', attrs={"data-issue-id": True})["data-issue-id"]
+        issueId = soup.find('a', attrs={"data-issue-id": True})["data-issue-id"]
         data = self.getIssueJson(issueId)
 
         issueName = data.get("issue_title")
@@ -113,6 +114,17 @@ class Tabltalk(BasicNewsRecipe):
         ans = [('Features', features), ('Columns', columns), ('Daily Studies', dailystudies)]
 
         return ans
+    
+    def is_link_wanted(url, tag):
+        if url.find("facebook.com") >= 0:
+            return false
+        return true
+    
+    def preprocess_html(self, soupe):
+        imgFacebook = soupe.find("img", attrs={"href": re.compile("facebook")})
+        if imgFacebook is not None:
+            imgFacebook.extract()
+        return soupe
 
     def postprocess_html(self, soupe, first_fetch):
         for cit in soupe.findAll("div", attrs={"class": re.compile("pull-quote__quote")}):
@@ -131,6 +143,10 @@ class Tabltalk(BasicNewsRecipe):
         tocMobile = soupe.find("div", attrs={"class": re.compile("toc__toggle--mobile")})
         if tocMobile is not None:
             tocMobile.extract()
+            
+        paywall = soupe.find("section", attrs={"class": re.compile("article__paywall")})
+        if paywall is not None:
+            paywall.extract()
 
         t = soupe.find("svg")
         if t is not None:
